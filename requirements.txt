@@ -1,0 +1,4 @@
+mutagen==1.46.0
+Requests==2.31.0
+tqdm==4.64.0
+yt_dlp==2023.7.6
