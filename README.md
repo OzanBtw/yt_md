@@ -30,6 +30,8 @@ Also, you'll need a Youtube API key in order to use this library. It is free and
 
 `dw.print_links()` will print downloaded musics' names and links in the terminal.
 
+`dw.set_format(*format='mp3'*)` will set the format of the file. Currently, you can either use **mp3** or **mp4**.
+
 If the script is terminated while running, it may not download some musics properly.
 
 _Tested on MacOS Ventura 13.1_
