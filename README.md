@@ -32,6 +32,8 @@ Also, you'll need a Youtube API key in order to use this library. It is free and
 
 `dw.set_format(*format='mp3'*)` will set the format of the file. Currently, you can either use **mp3** or **mp4**.
 
+`dw.download_video(*id*)` will download the video mathces the video id.
+
 If the script is terminated while running, it may not download some musics properly.
 
 _Tested on MacOS Ventura 13.1_

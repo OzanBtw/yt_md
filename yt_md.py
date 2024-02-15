@@ -59,17 +59,11 @@ class yt_md():  # youtube music download
         
         self.format = 'mp3'
 
-    def set_format(self, format):
-        if format in self.dic_format.keys():
-            self.format = format
-        else:
-            raise ValueError(f'Invalid format. Please use one of these types: {self.dic_format.keys()}')
-
-    def printt(self, message):
+    def __printt(self, message):
         if self.print_:
             print(message)
 
-    def get_artist(self, url):
+    def __get_artist(self, url):
         site = r.get(url)
         text = site.text
 
@@ -89,7 +83,7 @@ class yt_md():  # youtube music download
 
         return str(self.cache_channel_name)
 
-    def download_video_and_get_title(self, url):
+    def __download_video_and_get_title(self, url):
         
         ydl_opts = self.dic_format[self.format]
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -116,11 +110,14 @@ class yt_md():  # youtube music download
         with open(f'{self.path}/source.json', 'w') as f:
             json.dump(dic, f, indent=2)
 
-    def change_title(self, title):
+    def __change_title(self, title):
         return title.replace('/', '-')
-        return title.replace('é', 'e')
 
-    def download_and_set_image(self, thumbnail, path, url):
+    def __download_and_set_image(self, thumbnail, path, url):
+        
+        if self.format == 'mp4':
+            return
+        
         cover_path = f'{self.cache_path}/image_cache.png'
 
         try:
@@ -134,13 +131,11 @@ class yt_md():  # youtube music download
         with open(cover_path, 'wb') as f:
             f.write(link.content)
 
-        if self.format == 'mp4':
-            return
         
         audio_path = path
 
         audio = EasyID3(audio_path)
-        audio['artist'] = self.get_artist(url)
+        audio['artist'] = self.__get_artist(url)
         audio.save()
 
         audio = MP3(audio_path, ID3=ID3)
@@ -193,7 +188,7 @@ class yt_md():  # youtube music download
             cache = {"video_name": [],
                      "video_link": []}
 
-            self.printt('Creating Json File')
+            self.__printt('Creating Json File')
             with open(f'{self.path}/source.json', 'w') as f:
                 json.dump(cache, f, indent=2)
 
@@ -210,7 +205,7 @@ class yt_md():  # youtube music download
         missing = []
 
         for video in videos_names:
-            if self.change_title(video) not in files:
+            if self.__change_title(video) not in files:
                 missing.append(video)
 
         if len(missing) > 0:
@@ -220,7 +215,7 @@ class yt_md():  # youtube music download
 
         return []
 
-    def remove_unlisted(self, videos):
+    def __remove_unlisted(self, videos):
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
 
@@ -233,7 +228,7 @@ class yt_md():  # youtube music download
             if video not in videos_names:
                 deleted.append(video)
 
-                cache = f"{self.change_title(video)}.mp3"
+                cache = f"{self.__change_title(video)}.mp3"
                 try:
                     os.remove(f"{self.music_path}/{cache}")
                 except:
@@ -247,19 +242,19 @@ class yt_md():  # youtube music download
                     json.dump(dic, f, indent=2)
 
         if len(deleted) > 0:
-            self.printt(
+            self.__printt(
                 f"The following musics are removed from the folder \nbecause they are no longer a part of the list:")
 
             for i in range(len(deleted)):
                 text = f"\t* {deleted[i]}"
-                self.printt(text)
+                self.__printt(text)
 
-    def download_listed(self, videos):
+    def __download_listed(self, videos):
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
 
         # Adding Musics
-        self.printt('\nAdding & Fixing...')
+        self.__printt('\nAdding & Fixing...')
 
         unadded_videos = []
         unadded_video_links = []
@@ -279,15 +274,15 @@ class yt_md():  # youtube music download
             title = video[0]
             cache_url = f'https://youtube.com/watch?v={video[1]}'
 
-            if self.download_video_and_get_title(cache_url) == False:
+            if self.__download_video_and_get_title(cache_url) == False:
                 unadded_videos.append(title)
                 unadded_video_links.append(cache_url)
                 continue
 
-            self.download_and_set_image(
+            self.__download_and_set_image(
                 video[2], f"{self.cache_path}/cache.{self.format}", cache_url)
 
-            title = self.change_title(title)
+            title = self.__change_title(title)
 
             shutil.move(f"{self.cache_path}/cache.{self.format}",
                         f"{self.music_path}/{title}.{self.format}")
@@ -306,13 +301,14 @@ class yt_md():  # youtube music download
             bar.close()
 
         if len(unadded_videos) > 0:
-            self.printt("\n--------------\n")
-            self.printt(f"There are videos that could not be download with the given url... \nPlease find a different video for each of them and add them to the playlist on YouTube:\n")
+            self.__printt("\n--------------\n")
+            self.__printt(f"There are videos that could not be download with the given url... \nPlease find a different video for each of them and add them to the playlist on YouTube:\n")
 
             for i in range(len(unadded_videos)):
                 text = f"\t* {unadded_videos[i]} => {unadded_video_links[i]}"
-                self.printt(text)
-        # ------
+                self.__printt(text)
+    
+    # ------------
 
     def download_all(self):
         self.check_source()
@@ -321,21 +317,42 @@ class yt_md():  # youtube music download
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
 
-        self.printt(
+        self.__printt(
             f"There are {len(dic['video_name'])} music links in the source file!")
-        self.printt("--------------")
+        self.__printt("--------------")
 
-        self.remove_unlisted(self.videos)
+        self.__remove_unlisted(self.videos)
 
-        self.download_listed(self.get_new_videos())
+        self.__download_listed(self.get_new_videos())
 
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
 
-        self.printt(
+        self.__printt(
             f"\nAll done! There are currently {len(dic['video_name'])} musics!")
 
         self.sort_source()
+
+    def download_video(self, id):
+        info = r.get(f'https://www.googleapis.com/youtube/v3/videos?id={id}&fields=items(snippet(title,thumbnails))&key={self.api_key}&part=snippet').json()
+        video = [info['items'][0]['snippet']['title'], id, info['items'][0]['snippet']['title']]
+        
+        title = video[0]
+        cache_url = f'https://youtube.com/watch?v={video[1]}'
+
+        if self.__download_video_and_get_title(cache_url) == False:
+            self.__printt('Unable to download, please check the id!')
+
+        self.__download_and_set_image(
+            video[2], f"{self.cache_path}/cache.{self.format}", cache_url)
+
+        title = self.__change_title(title)
+
+        shutil.move(f"{self.cache_path}/cache.{self.format}",
+                    f"{self.music_path}/{title}.{self.format}")
+        
+        self.__printt(
+            f"\nAll done!")
 
     def print_links(self):
         with open(f'{self.path}/source.json', 'r') as f:
@@ -344,3 +361,9 @@ class yt_md():  # youtube music download
         for video, link in zip(dic['video_name'], dic['video_link']):
             text = f"\t* {video} => {link}"
             print(text)
+                
+    def set_format(self, format):
+            if format in self.dic_format.keys():
+                self.format = format
+            else:
+                raise ValueError(f'Invalid format. Please use one of these types: {self.dic_format.keys()}')
