@@ -22,7 +22,7 @@ Also, you'll need a Youtube API key in order to use this library. It is free and
 
     path = '/Users/@user/Desktop/music'
 
-    dw = yt_md.yt_md(api_key, playlist_id, path)
+    dw = yt_md.yt_md(api_key, path, playlist_id)
 
     dw.download_all()
 

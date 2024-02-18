@@ -24,7 +24,7 @@ class loggerOutputs:
 
 
 class yt_md():  # youtube music download
-    def __init__(self, api_key: str, playlist_id: str, path: str, print_=True, debug=False):
+    def __init__(self, api_key: str, path: str, playlist_id='.', print_=True, debug=False):
         self.music_path = f'{path}/target'
         self.cache_path = f'{path}/_cache'
         self.path = path
@@ -33,8 +33,6 @@ class yt_md():  # youtube music download
         self.print_ = print_
         self.debug = debug
         self.cache_channel_name = 'Unknown Artist'
-
-        self.check_source()
 
         self.dic_format = {
             'mp3': {
@@ -150,7 +148,7 @@ class yt_md():  # youtube music download
 
         audio.save()
 
-    def get_video_info(self):
+    def __get_video_info(self):
         # get videos
         videos = []
         info = r.get(
@@ -177,20 +175,22 @@ class yt_md():  # youtube music download
         else:
             self.videos = videos
 
-    def check_source(self):
+    def __check_source(self, terminal=False):
         if os.path.isdir(self.music_path) == False:
             os.mkdir(self.music_path)
 
         if os.path.isdir(self.cache_path) == False:
             os.mkdir(self.cache_path)
 
-        if os.path.exists(f'{self.path}/source.json') == False:
-            cache = {"video_name": [],
-                     "video_link": []}
+        if terminal == False:
+            if os.path.exists(f'{self.path}/source.json') == False:
+                cache = {"video_name": [],
+                        "video_link": []}
 
-            self.__printt('Creating Json File')
-            with open(f'{self.path}/source.json', 'w') as f:
-                json.dump(cache, f, indent=2)
+                self.__printt('Creating Json File')
+                with open(f'{self.path}/source.json', 'w') as f:
+                    json.dump(cache, f, indent=2)
+
 
     def get_new_videos(self):
         with open(f'{self.path}/source.json', 'r') as f:
@@ -309,10 +309,14 @@ class yt_md():  # youtube music download
                 self.__printt(text)
     
     # ------------
-
+    
     def download_all(self):
-        self.check_source()
-        self.get_video_info()  # gets self.video
+        self.__check_source()
+
+        if self.playlist_id == '.':
+            raise ValueError('Missing playlist id.')
+        
+        self.__get_video_info()  # gets self.video
 
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
@@ -334,6 +338,8 @@ class yt_md():  # youtube music download
         self.sort_source()
 
     def download_video(self, id):
+        self.__check_source()
+
         info = r.get(f'https://www.googleapis.com/youtube/v3/videos?id={id}&fields=items(snippet(title,thumbnails))&key={self.api_key}&part=snippet').json()
         video = [info['items'][0]['snippet']['title'], id, info['items'][0]['snippet']['title']]
         
@@ -342,6 +348,7 @@ class yt_md():  # youtube music download
 
         if self.__download_video_and_get_title(cache_url) == False:
             self.__printt('Unable to download, please check the id!')
+            return
 
         self.__download_and_set_image(
             video[2], f"{self.cache_path}/cache.{self.format}", cache_url)
@@ -354,7 +361,38 @@ class yt_md():  # youtube music download
         self.__printt(
             f"\nAll done!")
 
+    def download_video_terminal(self, id):
+        info = r.get(f'https://www.googleapis.com/youtube/v3/videos?id={id}&fields=items(snippet(title,thumbnails))&key={self.api_key}&part=snippet').json()
+        video = [info['items'][0]['snippet']['title'], id, info['items'][0]['snippet']['title']]
+        
+        title = video[0]
+
+        if input(f"\n'{title[:15]}' will be downloaded at '{self.path}'.\nDo you want to continue [Y/n]? ") in ["n", "N", "no", "No", "NO"]:
+            print("\nCancelled.")
+            return
+
+        self.__check_source(terminal=True)
+
+        cache_url = f'https://youtube.com/watch?v={video[1]}'
+
+        if self.__download_video_and_get_title(cache_url) == False:
+            self.__printt('Unable to download, please check the id!')
+            return
+
+        self.__download_and_set_image(
+            video[2], f"{self.cache_path}/cache.{self.format}", cache_url)
+
+        title = self.__change_title(title)
+
+        shutil.move(f"{self.cache_path}/cache.{self.format}",
+                    f"{self.music_path}/{title}.{self.format}")
+        
+        self.__printt(
+            f"\nAll done!")
+        
     def print_links(self):
+        self.__check_source()
+
         with open(f'{self.path}/source.json', 'r') as f:
             dic = json.load(f)
 
