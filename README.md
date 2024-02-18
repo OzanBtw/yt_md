@@ -34,6 +34,8 @@ Also, you'll need a Youtube API key in order to use this library. It is free and
 
 `dw.download_video(*id*)` will download the video mathces the video id.
 
+`dw.download_video_terminal(*id*)` works same as *download_video()*. However, it is safier to use this one. 
+
 If the script is terminated while running, it may not download some musics properly.
 
 _Tested on MacOS Ventura 13.1_
